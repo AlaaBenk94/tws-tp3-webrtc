@@ -9,7 +9,7 @@ import Content from './components/Content/index.jsx';
 const Index = () => {
 
     return (
-        <div className="container">
+        <div className="container-fluid">
             <Header />
             <Content />
         </div>
