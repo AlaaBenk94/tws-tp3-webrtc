@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node serveur/index.js",
+    "build": "webpack --mode production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -14,6 +15,11 @@
   "author": "benkarrad alaa eddine",
   "license": "ISC",
   "devDependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.9"
+  },
+  "dependencies": {
+    "require": "^2.4.20"
   }
 }
