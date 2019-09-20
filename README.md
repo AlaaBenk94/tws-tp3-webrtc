@@ -1,5 +1,25 @@
 # tws-tp1
-# dependencies
+### Author
+BENKARRAD Alaa Eddine
+
+### Check List
+* [X] Le rendu est effectué avant ce soir minuit. Pensez à remplir le formulaire.
+* [X] Les responsables de l’UE sont ajoutés au projet forge (le projet est clonable)
+* [X] Le projet ne contient que des éléments nécessaire (.gitignore est bien défini)
+* [X] Les dépendances de développement et de déploiement dans package.json sont bien définies
+* [X] npm run build construit le projet
+* [X] npm run start lance le serveur et permet de tester le projet.
+
+### Run
+build project :
+ 
+`npm run build `
+
+start node server :
+
+`npm run start`
+
+### dependencies
 express : `npm i express`
 
 webpack : `npm i webpack webpack-cli`
