@@ -20,11 +20,11 @@ start node server :
 `npm run start`
 
 ### dependencies
-express : `npm i express`
+* express : `npm i --save-dev express`
 
-webpack : `npm i webpack webpack-cli`
+* webpack : `npm i --save-dev webpack webpack-cli`
 
-babel : `npm i @babel/core @babel/preset-env @babel/preset-react babel-loader`
+* babel : `npm i --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader`
 
 react : `npm i react react-dom`
 
