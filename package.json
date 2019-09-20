@@ -28,8 +28,12 @@
   },
   "dependencies": {
     "bootstrap": "^4.3.1",
+    "css-loader": "^3.2.0",
+    "jquery": "^3.4.1",
+    "popper": "^1.0.1",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
-    "require": "^2.4.20"
+    "require": "^2.4.20",
+    "style-loader": "^1.0.0"
   }
 }

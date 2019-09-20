@@ -9,3 +9,5 @@ babel : `npm i @babel/core @babel/preset-env @babel/preset-react babel-loader`
 react : `npm i react react-dom`
 
 html-webpack-plugin : `npm i --save-dev html-webpack-plugin`
+
+bootstrap : `npm i --save bootstrap style-loader css-loader jquery propper `
