@@ -26,8 +26,8 @@ start node server :
 
 * babel : `npm i --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader`
 
-react : `npm i react react-dom`
+* react : `npm i react react-dom`
 
-html-webpack-plugin : `npm i --save-dev html-webpack-plugin`
+* html-webpack-plugin : `npm i --save-dev html-webpack-plugin`
 
-bootstrap : `npm i --save bootstrap style-loader css-loader jquery propper `
+* bootstrap : `npm i --save bootstrap style-loader css-loader jquery propper `
