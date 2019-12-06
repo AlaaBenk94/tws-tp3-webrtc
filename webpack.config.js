@@ -36,12 +36,12 @@ module.exports = {
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 const htmlPlugin = new HtmlWebPackPlugin({
-    template: "./client/index.html",
+    template: "./src/index.html",
     filename: "./index.html"
 });
 
 module.exports = {
-    entry: "./client/index.js",
+    entry: "./src/index.js",
     output: { // NEW
         path: path.join(__dirname, 'dist'),
         filename: "[name].js"
