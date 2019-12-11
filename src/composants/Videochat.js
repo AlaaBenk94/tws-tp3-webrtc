@@ -21,6 +21,10 @@ export class Videochat extends React.Component {
 
         this.start=this.start.bind(this)
         this.call=this.call.bind(this)
+        this.gotStream=this.gotStream.bind(this)
+        this.onCreateOfferSuccess=this.onCreateOfferSuccess.bind(this)
+        this.onCreateAnswerSuccess=this.onCreateAnswerSuccess.bind(this)
+        this.onIceCandidate=this.onIceCandidate.bind(this)
     }
 
     start(){
@@ -37,7 +41,7 @@ export class Videochat extends React.Component {
             });
     }
 
-    gotStream = stream => {
+    gotStream(stream){
         this.localVideoRef.current.srcObject = stream;
         // On fait en sorte d'activer le bouton permettant de commencer un appel
         this.setState({callAvailable: true});
@@ -51,13 +55,13 @@ export class Videochat extends React.Component {
         this.client1Ref.current = new RTCPeerConnection(/*serversRef.current*/);
         this.client2Ref.current = new RTCPeerConnection(/*serversRef.current*/);
 
-        this.client1Ref.current.onicecandidate = e => onIceCandidate(this.client1Ref.current, e);
+        this.client1Ref.current.onicecandidate = e => this.onIceCandidate(this.client1Ref.current, e);
         this.client1Ref.current.oniceconnectionstatechange = e =>{
             console.log("Connexion request")
             onIceStateChange(this.client1Ref.current, e);
         }
 
-        this.client2Ref.current.onicecandidate = e => onIceCandidate(this.client2Ref.current, e);
+        this.client2Ref.current.onicecandidate = e => this.onIceCandidate(this.client2Ref.current, e);
         this.client2Ref.current.oniceconnectionstatechange = e => onIceStateChange(this.client2Ref.current, e);
         this.client2Ref.current.ontrack = gotRemoteStream;
 
@@ -69,13 +73,78 @@ export class Videochat extends React.Component {
             offerToReceiveAudio: 1,
             offerToReceiveVideo: 1
         })
-            .then(onCreateOfferSuccess, error =>
+            .then(this.onCreateOfferSuccess, error =>
                 console.error(
                     "Failed to create session description",
                     error.toString()
                 )
             );
 
+    };
+
+    onCreateOfferSuccess(desc){     
+
+        this.client1Ref.current.setLocalDescription(desc).then( () =>
+          console.log("client1 setLocalDescription complete createOffer"),
+          error =>
+              console.error(
+                  "client1 Failed to set session description in createOffer",
+                  error.toString()
+              )
+        );
+      
+        this.client2Ref.current.setRemoteDescription(desc).then( () => {
+          console.log("client2 setRemoteDescription complete createOffer");
+          this.client2Ref.current.createAnswer()
+              .then(this.onCreateAnswerSuccess, error =>
+                  console.error(
+                      "client2 Failed to set session description in createAnswer",
+                      error.toString()
+                  )
+              );
+          },
+          error =>
+              console.error(
+                  "client2 Failed to set session description in createOffer",
+                  error.toString()
+              )
+        );
+      };
+
+    onCreateAnswerSuccess (desc){
+ 
+        this.client1Ref.current.setRemoteDescription(desc)
+            .then(() => console.log("client1 setRemoteDescription complete createAnswer"),
+                error => console.error(
+                        "client1 Failed to set session description in onCreateAnswer",
+                        error.toString()
+                    )
+            );
+ 
+        this.client2Ref.current.setLocalDescription(desc)
+            .then(() => console.log("client2 setLocalDescription complete createAnswer"),
+                error => console.error(
+                        "client2 Failed to set session description in onCreateAnswer",
+                        error.toString()
+                    )
+            );
+    };
+
+    onIceCandidate = (pc, event) => {
+        console.log("!!!!pc")
+        console.log(pc)
+        let otherPc = pc === this.client1Ref ? this.client2Ref.current : this.client1Ref.current;
+ 
+        otherPc
+            .addIceCandidate(event.candidate)
+            .then(
+                () => console.log("addIceCandidate success"),
+                error =>
+                    console.error(
+                        "failed to add ICE Candidate",
+                        error.toString()
+                    )
+            );
     };
 
   /*  hangUp() {
