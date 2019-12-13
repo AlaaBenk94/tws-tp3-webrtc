@@ -1,6 +1,9 @@
 import React from "react";
 import ButtonToolbar from "react-bootstrap/ButtonToolbar";
 import Button from "react-bootstrap/Button";
+import {Col, Container, FormControl, InputGroup, Row} from "react-bootstrap";
+import SidePanel from "./SidePanel";
+import SignalingConnection from "./SignalingConnection";
 
 export class Videochat extends React.Component {
 
@@ -9,16 +12,25 @@ export class Videochat extends React.Component {
         this.state = {
             startAvailable: true,
             callAvailable: false,
-            hangupAvailable: false
+            hangupAvailable: false,
+            userId: 0,
+            userName: null,
+            usersList: []
         };
+
+        // Refs
         this.localVideoRef = React.createRef();
         this.remoteVideoRef = React.createRef();
         this.localStreamRef = React.createRef();
+        this.usernameInput = React.createRef();
         this.client1Ref = React.createRef();
         this.client2Ref = React.createRef();
         this.serversRef = React.createRef();
         this.gotRemoteStream = React.createRef();
 
+        // Binding functions
+        this.onSignalingMessage = this.onSignalingMessage.bind(this);
+        this.pushUsername = this.pushUsername.bind(this);
         this.start = this.start.bind(this);
         this.call = this.call.bind(this);
         this.gotStream = this.gotStream.bind(this);
@@ -27,6 +39,40 @@ export class Videochat extends React.Component {
         this.onIceCandidate = this.onIceCandidate.bind(this);
         this.hangUp = this.hangUp.bind(this);
     }
+
+    componentDidMount() {
+        console.log('Component did mount');
+        this.signalingConnection = new SignalingConnection({
+            socketURL: window.location.host,
+            onOpen: () => {console.log('signalingConnection open')},
+            onMessage: this.onSignalingMessage
+        });
+    }
+
+
+    // On signaling message received
+    onSignalingMessage(msg) {
+        console.log('signaling message : ', msg);
+        switch (msg.type) {
+            case 'id':
+                this.setState({userId: msg.id});
+                console.log(`changed user id ${JSON.stringify(this.state)}`);
+                break;
+            case 'userlist':
+                console.log(`this is users list ${msg.users}`);
+                break;
+        }
+    };
+
+    pushUsername() {
+        this.signalingConnection.sendToServer({
+            name: this.usernameInput.current.value,
+            date: Date.now(),
+            id: this.state.userId,
+            type: "username"
+        });
+    };
+
 
     start() {
         this.setState({startAvailable: false});
@@ -171,29 +217,69 @@ export class Videochat extends React.Component {
 
     render() {
         return (
-            <div>
-                <video
-                    ref={this.localVideoRef}
-                    autoPlay
-                    muted
-                />
-                <video
-                    ref={this.remoteVideoRef}
-                    autoPlay
-                />
-
-                <ButtonToolbar>
-                    <Button onClick={this.start} disabled={!this.state.startAvailable}>
-                        Start
-                    </Button>
-                    <Button onClick={this.call} disabled={!this.state.callAvailable}>
-                        Call
-                    </Button>
-                    <Button onClick={this.hangUp} disabled={!this.state.hangupAvailable}>
-                        Hang Up
-                    </Button>
-                </ButtonToolbar>
-            </div>
+            <Container fluid={true} className="vh-100">
+                <Row className="h-100">
+                    <Col xs={2}>
+                            <Row>
+                                <Col>
+                                    <InputGroup className="mb-3" size="sm">
+                                        <FormControl
+                                            ref={this.usernameInput}
+                                            placeholder="username"
+                                            aria-label="Username"
+                                            aria-describedby="basic-addon2"
+                                        />
+                                        <InputGroup.Append>
+                                            <Button onClick={() => {this.pushUsername()}} variant="outline-primary">OK</Button>
+                                        </InputGroup.Append>
+                                    </InputGroup>
+                                </Col>
+                            </Row>
+                            <Col>
+                                List of users :
+                                <InputGroup className="mb-3" size="sm">
+                                    <FormControl plaintext readOnly defaultValue="User 1" />
+                                    <InputGroup.Append>
+                                        <Button variant="outline-success">Call</Button>
+                                    </InputGroup.Append>
+                                </InputGroup>
+                            </Col>
+                            <Row />
+                    </Col>
+                    <Col xs={10}>
+                        <Row className="h-75">
+                            <Col xs={6} className="p-0">
+                            <video
+                                className="w-100"
+                                ref={this.localVideoRef}
+                                autoPlay
+                                muted
+                            />
+                            </Col>
+                            <Col xs={6} className="p-0">
+                            <video
+                                className="w-100"
+                                ref={this.remoteVideoRef}
+                                autoPlay
+                            />
+                            </Col>
+                        </Row>
+                        <Row className="h-25">
+                            <ButtonToolbar>
+                                <Button onClick={this.start} disabled={!this.state.startAvailable}>
+                                    Start
+                                </Button>
+                                <Button onClick={this.call} disabled={!this.state.callAvailable}>
+                                    Call
+                                </Button>
+                                <Button onClick={this.hangUp} disabled={!this.state.hangupAvailable}>
+                                    Hang Up
+                                </Button>
+                            </ButtonToolbar>
+                        </Row>
+                    </Col>
+                </Row>
+            </Container>
         )
     }
 }
