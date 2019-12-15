@@ -9,7 +9,7 @@ class SignalingConnection {
                 }) {
         this.socketURL = socketURL;
         this.onOpen = onOpen;
-        this.messageListeners = [onMessage];
+        this.messageListeners = [onMessage]
         this.connectToSocket();
     }
 
@@ -19,14 +19,20 @@ class SignalingConnection {
     };
 
     connectToSocket = () => {
-        let serverUrl = `wss://${this.socketURL}`;
+        let scheme = document.location.protocol === "https:" ? "wss" : "ws";
+        let serverUrl = `${scheme}://${this.socketURL}`;
 
         this.connection = new WebSocket(serverUrl, "json");
         this.connection.onopen = () => this.onOpen();
 
         this.connection.onmessage = event => {
+            console.log('ws: data received : ' + event.data);
             let msg = JSON.parse(event.data);
             this.messageListeners.forEach(func => func(msg))
+        };
+
+        this.connection.onerror = (err) => {
+            console.error('ws: error : ',err)
         }
     };
 
@@ -37,5 +43,6 @@ class SignalingConnection {
         }
     }
 }
+
 
 export default SignalingConnection;

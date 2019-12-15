@@ -2,19 +2,20 @@ import React from "react";
 import ButtonToolbar from "react-bootstrap/ButtonToolbar";
 import Button from "react-bootstrap/Button";
 import {Col, Container, FormControl, InputGroup, Row} from "react-bootstrap";
-import SidePanel from "./SidePanel";
 import SignalingConnection from "./SignalingConnection";
+import PeerConnection from "./PeerConnection";
 
 export class Videochat extends React.Component {
 
     constructor(props) {
         super(props);
+
         this.state = {
             startAvailable: true,
             callAvailable: false,
             hangupAvailable: false,
             userId: 0,
-            userName: null,
+            userName: "user",
             usersList: []
         };
 
@@ -23,21 +24,6 @@ export class Videochat extends React.Component {
         this.remoteVideoRef = React.createRef();
         this.localStreamRef = React.createRef();
         this.usernameInput = React.createRef();
-        this.client1Ref = React.createRef();
-        this.client2Ref = React.createRef();
-        this.serversRef = React.createRef();
-        this.gotRemoteStream = React.createRef();
-
-        // Binding functions
-        this.onSignalingMessage = this.onSignalingMessage.bind(this);
-        this.pushUsername = this.pushUsername.bind(this);
-        this.start = this.start.bind(this);
-        this.call = this.call.bind(this);
-        this.gotStream = this.gotStream.bind(this);
-        this.onCreateOfferSuccess = this.onCreateOfferSuccess.bind(this);
-        this.onCreateAnswerSuccess = this.onCreateAnswerSuccess.bind(this);
-        this.onIceCandidate = this.onIceCandidate.bind(this);
-        this.hangUp = this.hangUp.bind(this);
     }
 
     componentDidMount() {
@@ -49,22 +35,47 @@ export class Videochat extends React.Component {
         });
     }
 
-
-    // On signaling message received
-    onSignalingMessage(msg) {
+    onSignalingMessage = msg => {
         console.log('signaling message : ', msg);
         switch (msg.type) {
             case 'id':
                 this.setState({userId: msg.id});
                 console.log(`changed user id ${JSON.stringify(this.state)}`);
                 break;
+            case "rejectusername":
+                this.setState({userName: msg.name});
+                break;
             case 'userlist':
                 console.log(`this is users list ${msg.users}`);
+                this.setState({usersList: [...msg.users], userName: this.usernameInput.current.value});
+                break;
+
+            // Signaling messages: these messages are used to trade WebRTC
+            // signaling information during negotiations leading up to a video
+            // call.
+            case "connection-offer": // Invitation and offer to chat
+                console.log(`[ recv ] connection-offer from ${msg.name} to ${msg.target}`);
+                this.targetUsername = msg.name;
+                this.createPeerConnection();
+                this.peerConnection.connectionOffer(msg);
+                break;
+
+            case "connection-answer": // Callee has answered our offer
+                console.log(`[ recv ] connection-answer from ${msg.name} to ${msg.target}`);
+                this.peerConnection.connectionAnswer(msg);
+                break;
+
+            case "new-ice-candidate": // A new ICE candidate has been received
+                this.peerConnection.newICECandidate(msg);
+                break;
+
+            case "hang-up": // The other peer has hung up the call
+                // this.close();
                 break;
         }
     };
 
-    pushUsername() {
+    pushUsername = () => {
         this.signalingConnection.sendToServer({
             name: this.usernameInput.current.value,
             date: Date.now(),
@@ -74,7 +85,7 @@ export class Videochat extends React.Component {
     };
 
 
-    start() {
+    start = () => {
         this.setState({startAvailable: false});
         navigator.mediaDevices
             .getUserMedia({
@@ -86,136 +97,84 @@ export class Videochat extends React.Component {
                 console.log(e);
                 alert("getUserMedia() error:" + e.name)
             });
-    }
+    };
 
-    gotStream(stream) {
+    call = user => {
+        this.targetUsername = user; // ref et non state
+        this.createPeerConnection();
+        this.peerConnection.offerConnection();
+    };
+
+    createPeerConnection = () => {
+        if (this.peerConnection) return;
+        console.log(`creating connection from ${this.state.userName} to ${this.targetUsername.value}`);
+        this.peerConnection = new PeerConnection({
+            gotRemoteStream: this.gotRemoteStream,
+            gotRemoteTrack: this.gotRemoteTrack,
+            signalingConnection: this.signalingConnection,
+            onClose: this.closeVideoCall,
+            localStream: this.localStreamRef.current,
+            username: this.state.userName,
+            targetUsername: this.targetUsername.value
+        });
+    };
+
+    gotStream = stream => {
         this.localVideoRef.current.srcObject = stream;
-        // On fait en sorte d'activer le bouton permettant de commencer un appel
         this.setState({callAvailable: true});
-        this.localStreamRef.current = stream
-    }
+        this.localStreamRef.current = stream;
+    };
 
-    gotRemoteStream(event) {
-        this.remoteVideoRef.current.srcObject = event.streams[0];
-        // On fait en sorte d'activer le bouton permettant de commencer un appel
-        // this.setState({callAvailable: true});
-        // this.remoteStreamRef.current = stream
-    }
-
-    call() {
-        this.setState({callAvailable: false});
-        this.setState({hangupAvailable: true})
-
-        this.client1Ref.current = new RTCPeerConnection(/*serversRef.current*/);
-        this.client2Ref.current = new RTCPeerConnection(/*serversRef.current*/);
-
-        this.client1Ref.current.onicecandidate = e => this.onIceCandidate(this.client1Ref.current, e);
-        this.client1Ref.current.oniceconnectionstatechange = e => {
-            console.log("Connexion request")
-            onIceStateChange(this.client1Ref.current, e);
+    gotRemoteTrack = event => {
+        let remoteVideo = this.remoteVideoRef.current;
+        if (remoteVideo.srcObject !== event.streams[0]) {
+            remoteVideo.srcObject = event.streams[0];
         }
+        this.setState({hangupAvailable: true});
+    };
 
-        this.client2Ref.current.onicecandidate = e => this.onIceCandidate(this.client2Ref.current, e);
-        this.client2Ref.current.oniceconnectionstatechange = e => onIceStateChange(this.client2Ref.current, e);
-        this.client2Ref.current.ontrack = e => {
-            this.remoteVideoRef.current.srcObject = e.streams[0];
-        };
+    gotRemoteStream = event => {
+        let remoteVideo = this.remoteVideoRef.current;
+        if (remoteVideo.srcObject !== event.streams[0]) {
+            remoteVideo.srcObject = event.streams[0];
+        }
+    };
 
-        this.localStreamRef.current
+    close = () => {
+        this.peerConnection.close();
+        this.peerConnection = null;
+        this.closeVideoCall();
+    };
+
+    closeVideoCall = () => {
+        this.remoteVideoRef.current.srcObject &&
+        this.remoteVideoRef.current.srcObject
             .getTracks()
-            .forEach(track => this.client1Ref.current.addTrack(track, this.localStreamRef.current));
+            .forEach(track => track.stop());
+        this.remoteVideoRef.current.src = null;
 
-        this.client1Ref.current.createOffer({
-            offerToReceiveAudio: 1,
-            offerToReceiveVideo: 1
-        })
-            .then(this.onCreateOfferSuccess, error =>
-                console.error(
-                    "Failed to create session description",
-                    error.toString()
-                )
-            );
-
+        // TODO Mettre à jour l'état des boutons, et supprimer targetUsername.
     };
-
-    onCreateOfferSuccess(desc) {
-
-        this.client1Ref.current.setLocalDescription(desc).then(() =>
-                console.log("client1 setLocalDescription complete createOffer"),
-            error =>
-                console.error(
-                    "client1 Failed to set session description in createOffer",
-                    error.toString()
-                )
-        );
-
-        this.client2Ref.current.setRemoteDescription(desc).then(() => {
-                console.log("client2 setRemoteDescription complete createOffer");
-                this.client2Ref.current.createAnswer()
-                    .then(this.onCreateAnswerSuccess, error =>
-                        console.error(
-                            "client2 Failed to set session description in createAnswer",
-                            error.toString()
-                        )
-                    );
-            },
-            error =>
-                console.error(
-                    "client2 Failed to set session description in createOffer",
-                    error.toString()
-                )
-        );
-    };
-
-    onCreateAnswerSuccess(desc) {
-
-        this.client1Ref.current.setRemoteDescription(desc)
-            .then(() => console.log("client1 setRemoteDescription complete createAnswer"),
-                error => console.error(
-                    "client1 Failed to set session description in onCreateAnswer",
-                    error.toString()
-                )
-            );
-
-        this.client2Ref.current.setLocalDescription(desc)
-            .then(() => console.log("client2 setLocalDescription complete createAnswer"),
-                error => console.error(
-                    "client2 Failed to set session description in onCreateAnswer",
-                    error.toString()
-                )
-            );
-    };
-
-    onIceCandidate = (pc, event) => {
-        console.log("!!!!pc")
-        console.log(pc)
-        let otherPc = pc === this.client1Ref ? this.client2Ref.current : this.client1Ref.current;
-
-        otherPc
-            .addIceCandidate(event.candidate)
-            .then(
-                () => console.log("addIceCandidate success"),
-                error =>
-                    console.error(
-                        "failed to add ICE Candidate",
-                        error.toString()
-                    )
-            );
-    };
-
-      hangUp() {
-
-          this.client1Ref.current.close();
-          this.client2Ref.current.close();
-
-          this.client1Ref.current = null;
-          this.client2Ref.current = null;
-
-          this.setState({hangupAvailable: false});
-          this.setState({callAvailable: true});
-      };
 
     render() {
+
+        console.log('rerendering...');
+
+        let userList = [];
+        for (let i=0; i<this.state.usersList.length; i+=1)
+            userList.push(
+                <InputGroup key={i} className="mb-3" size="sm">
+                    <FormControl plaintext readOnly defaultValue={this.state.usersList[i]}
+                                 onClick={e => {this.call(e.target)}}
+                    />
+                    <InputGroup.Append>
+                        <Button
+                            // disabled={!this.state.callAvailable}
+                            variant="outline-success">Call</Button>
+                    </InputGroup.Append>
+                </InputGroup>
+            );
+
         return (
             <Container fluid={true} className="vh-100">
                 <Row className="h-100">
@@ -237,12 +196,7 @@ export class Videochat extends React.Component {
                             </Row>
                             <Col>
                                 List of users :
-                                <InputGroup className="mb-3" size="sm">
-                                    <FormControl plaintext readOnly defaultValue="User 1" />
-                                    <InputGroup.Append>
-                                        <Button variant="outline-success">Call</Button>
-                                    </InputGroup.Append>
-                                </InputGroup>
+                                {userList}
                             </Col>
                             <Row />
                     </Col>

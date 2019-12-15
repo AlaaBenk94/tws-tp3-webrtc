@@ -25,7 +25,6 @@
 // http://creativecommons.org/publicdomain/zero/1.0/
 
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 const express = require('express');
 
 const app = express();
@@ -46,18 +45,21 @@ app.use(express.static(DIST_DIR));
 const WebSocketServer = require('websocket').server;
 
 // Used for managing the text chat user list.
+
 let connectionArray = [];
 let nextID = Date.now();
 let appendToMakeUnique = 1;
 
 // Output logging information to console
+
 function log(text) {
   const time = new Date();
+
   console.log(`[${time.toLocaleTimeString()}] ${text}`);
 }
 
 // If you want to implement support for blocking specific origins, this is
-// where you do it. Just return false to refuse WebSocket connections given
+// where you do it. Just return falseht to refuse WebSocket connections given
 // the specified origin.
 function originIsAllowed(origin) {
   return true; // We will accept all connections
@@ -70,7 +72,7 @@ function isUsernameUnique(name) {
   let isUnique = true;
   let i;
 
-  for (i = 0; i < connectionArray.length; i += 1) {
+  for (i = 0; i < connectionArray.length; i++) {
     if (connectionArray[i].username === name) {
       isUnique = false;
       break;
@@ -86,7 +88,7 @@ function sendToOneUser(target, msgString) {
   const isUnique = true;
   let i;
 
-  for (i = 0; i < connectionArray.length; i += 1) {
+  for (i = 0; i < connectionArray.length; i++) {
     if (connectionArray[i].username === target) {
       connectionArray[i].sendUTF(msgString);
       break;
@@ -102,7 +104,7 @@ function getConnectionForID(id) {
   let connect = null;
   let i;
 
-  for (i = 0; i < connectionArray.length; i += 1) {
+  for (i = 0; i < connectionArray.length; i++) {
     if (connectionArray[i].clientID === id) {
       connect = connectionArray[i];
       break;
@@ -124,7 +126,7 @@ function makeUserListMessage() {
 
   // Add the users to the list
 
-  for (i = 0; i < connectionArray.length; i += 1) {
+  for (i = 0; i < connectionArray.length; i++) {
     userListMsg.users.push(connectionArray[i].username);
   }
 
@@ -140,7 +142,7 @@ function sendUserListToAll() {
   const userListMsgStr = JSON.stringify(userListMsg);
   let i;
 
-  for (i = 0; i < connectionArray.length; i += 1) {
+  for (i = 0; i < connectionArray.length; i++) {
     connectionArray[i].sendUTF(userListMsgStr);
   }
 }
@@ -178,6 +180,7 @@ httpsServer.listen(port, () => {
 });
 
 // Create the WebSocket server by converting the HTTPS server into one.
+
 const wsServer = new WebSocketServer({
   httpServer: httpsServer,
   autoAcceptConnections: false,
@@ -186,6 +189,7 @@ const wsServer = new WebSocketServer({
 // Set up a "connect" message handler on our WebSocket server. This is
 // called whenever a user connects to the server's port using the
 // WebSocket protocol.
+
 wsServer.on('request', (request) => {
   if (!originIsAllowed(request.origin)) {
     request.reject();
@@ -194,17 +198,20 @@ wsServer.on('request', (request) => {
   }
 
   // Accept the request and get a connection.
+
   const connection = request.accept('json', request.origin);
 
   // Add the new connection to our list of connections.
+
   log(`Connection accepted from ${connection.remoteAddress}.`);
   connectionArray.push(connection);
 
   connection.clientID = nextID;
-  nextID += 1;
+  nextID++;
 
   // Send the new client its token; it send back a "username" message to
   // tell us what username they want to use.
+
   let msg = {
     type: 'id',
     id: connection.clientID,
@@ -215,25 +222,23 @@ wsServer.on('request', (request) => {
   // is a message sent by a client, and may be text to share with other
   // users, a private message (text or signaling) for one user, or a command
   // to the server.
+
   connection.on('message', (message) => {
     if (message.type === 'utf8') {
       log(`Received Message: ${message.utf8Data}`);
 
       // Process incoming data.
+
       let sendToClients = true;
       msg = JSON.parse(message.utf8Data);
       const connect = getConnectionForID(msg.id);
-
-      if (!connect) {
-        return;
-      }
 
       // Take a look at the incoming object and act on it based
       // on its type. Unknown message types are passed through,
       // since they may be used to implement client-side features.
       // Messages with a "target" property are sent only to a user
       // by that name.
-      // eslint-disable-next-line default-case
+
       switch (msg.type) {
         // Public, textual message
         case 'message':
@@ -241,16 +246,16 @@ wsServer.on('request', (request) => {
           msg.text = msg.text.replace(/(<([^>]+)>)/ig, '');
           break;
 
-        // Username change
-        case 'username': {
-          let nameChanged = false;
-          const origName = msg.name;
+          // Username change
+        case 'username':
+          var nameChanged = false;
+          var origName = msg.name;
 
           // Ensure the name is unique by appending a number to it
           // if it's not; keep trying that until it works.
           while (!isUsernameUnique(msg.name)) {
             msg.name = origName + appendToMakeUnique;
-            appendToMakeUnique += 1;
+            appendToMakeUnique++;
             nameChanged = true;
           }
 
@@ -270,11 +275,13 @@ wsServer.on('request', (request) => {
           // updated user list to all users. Yeah, we're sending a full
           // list instead of just updating. It's horribly inefficient
           // but this is a demo. Don't do this in a real app.
+          if (!connect) {
+            return;
+          }
           connect.username = msg.name;
           sendUserListToAll();
           sendToClients = false; // We already sent the proper responses
           break;
-        }
       }
 
       // Convert the revised message back to JSON and send it out
@@ -289,10 +296,10 @@ wsServer.on('request', (request) => {
 
         // If the message specifies a target username, only send the
         // message to them. Otherwise, send it to every user.
-        if (msg.target && msg.target.length !== 0) {
+        if (msg.target && msg.target !== undefined && msg.target.length !== 0) {
           sendToOneUser(msg.target, msgString);
         } else {
-          for (i = 0; i < connectionArray.length; i += 1) {
+          for (i = 0; i < connectionArray.length; i++) {
             connectionArray[i].sendUTF(msgString);
           }
         }
@@ -321,5 +328,3 @@ wsServer.on('request', (request) => {
     log(logMessage);
   });
 });
-
-console.log('this is from server : ');
