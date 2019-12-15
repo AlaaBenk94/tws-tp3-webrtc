@@ -5,15 +5,12 @@ class PeerConnection {
                     onClose,
                     localStream,
                     username,
-                    targetUsername,
-                    dataChannelLabel
-                }) {
+                    targetUsername}) {
         this.signalingConnection = signalingConnection;
         this.onClose = onClose;
         this.localStream = localStream;
         this.username = username;
         this.targetUsername = targetUsername;
-        this.dataChannelLabel = dataChannelLabel;
 
         this.peerConnection = new RTCPeerConnection({
             iceServers: [
@@ -32,7 +29,6 @@ class PeerConnection {
 
         if (this.localStream) {
             for (const track of this.localStream.getTracks()) {
-                // this.peerConnection.addTransceiver(track, {streams:[this.localStream]});
                 this.peerConnection.addTrack(track, this.localStream);
             }
         }
