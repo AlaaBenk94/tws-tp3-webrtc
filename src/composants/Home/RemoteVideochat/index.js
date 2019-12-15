@@ -104,6 +104,16 @@ class RemoteVideochat extends React.Component {
   };
 
   call = user => {
+    if (user === this.state.userName) {
+      alert("you can not call yourself, that would be weird!!");
+      return;
+    }
+
+    if(!this.localStreamRef.current){
+      alert("you have to start your webcam first!");
+      return;
+    }
+
     this.targetUsername = user; // ref et non state
     this.createPeerConnection();
     this.peerConnection.offerConnection();

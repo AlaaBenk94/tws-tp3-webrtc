@@ -1,33 +1,46 @@
-# tws-tp1
-### Author
-BENKARRAD Alaa Eddine
+# tws-tp3 : VideoChat utilisant WebRTC
+### Auteurs
+BENKARRAD Alaa Eddine <br/>
+AISSAOUI Abdelwalid
 
-### Check List
-* [X] Le rendu est effectué avant ce soir minuit. Pensez à remplir le formulaire.
-* [X] Les responsables de l’UE sont ajoutés au projet forge (le projet est clonable)
-* [X] Le projet ne contient que des éléments nécessaire (.gitignore est bien défini)
-* [X] Les dépendances de développement et de déploiement dans package.json sont bien définies
-* [X] npm run build construit le projet
-* [X] npm run start lance le serveur et permet de tester le projet.
-
-### Run
-build project :
+### Build et Deploiement
+#### Preparation
+1. installer les packages npm 
+```bash
+npm install
+```
+2. build 
+```bash
+npm build 
+```
+#### Production
+Demarer le serveur en mode production
+```bash
+npm start 
+```
+#### Developpement
+ Lancer en mode dev
+```bash
+npm run dev 
+```
+#### Deploiement
+ le deploiement sur heroku se fait automatiquement dès le 
+ push sur github.
  
-`npm run build `
+### Testing
+#### Environment du test
+Nous avons réussi à faire fonctionner notre solution sur l'environement suivant :
+- os : ubuntu 19.10 et windows 10
+- browser : google chrome (Version 79.0.3945.79 et 78.0.3904.108)
 
-start node server :
-
-`npm run start`
-
-### dependencies
-* express : `npm i --save-dev express`
-
-* webpack : `npm i --save-dev webpack webpack-cli`
-
-* babel : `npm i --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader`
-
-* react : `npm i react react-dom`
-
-* html-webpack-plugin : `npm i --save-dev html-webpack-plugin`
-
-* bootstrap : `npm i --save bootstrap style-loader css-loader jquery propper `
+`Ainsi, nous avons testé l'application sur firfox, et ça n'a pas fonctionnée.`
+### Execution
+1. accedez au site ensuite a la version remote 
+```http request
+https://tws-tp3-webrtc.herokuapp.com/
+```
+2. entrez l'username souhaité et cliquer sur ok
+3. cliquez sur le button start pour demarrer la webcam
+4. refaire les étapes 1,2 et 3 avec un autre utilisateur (autre machine ou navigateur)
+5. a ce stade vous aurez la liste des utilisateur connectés, cliquer sur le button d'appel pour appeler.
+6. finalement, vous aurez le button hangUp pour raccrocher 
