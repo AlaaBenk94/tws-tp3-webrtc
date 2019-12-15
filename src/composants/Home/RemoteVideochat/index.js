@@ -183,7 +183,7 @@ class RemoteVideochat extends React.Component {
     return (
       <Container fluid={true} className="vh-100">
         <Row className="h-100 justify-content-center align-item-center-center">
-          <Col xs={2} className="sidePanel pt-3">
+          <Col xs={2} className="sidePanel pt-3 my-2 rounded pt-2">
             <Row>
               <Col>
                 <InputGroup className="mb-3" size="sm">
@@ -207,7 +207,7 @@ class RemoteVideochat extends React.Component {
             </Col>
             <Row/>
           </Col>
-          <Col xs={9} id="videosContainer">
+          <Col xs={9} className="m-2 p-2 rounded" id="videosContainer">
             <Row className="vh-100">
               <Col>
                 <Row className="h-75">
