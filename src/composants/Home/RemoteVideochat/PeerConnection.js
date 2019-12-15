@@ -28,7 +28,6 @@ class PeerConnection {
         this.peerConnection.oniceconnectionstatechange = this.handleICEConnectionStateChangeEvent;
         this.peerConnection.onsignalingstatechange = this.handleSignalingStateChangeEvent;
         this.peerConnection.onicegatheringstatechange = this.handleICEGatheringStateChangeEvent;
-        //this.peerConnection.onnegotiationneeded = this.offerConnection;
         this.peerConnection.ontrack = gotRemoteTrack;
 
         if (this.localStream) {
@@ -51,7 +50,7 @@ class PeerConnection {
     };
 
     handleICEConnectionStateChangeEvent = (event) => {
-        console.log(`ICE state : ${event}`)
+        console.log(`ICE state : ${event}`);
 
         switch (this.peerConnection.iceConnectionState) {
             case "closed":
@@ -143,11 +142,7 @@ class PeerConnection {
             .then(r => console.log(`ice condidate succeed ${r}`))
             .catch(err => console.log(`ice condidate error ${err}`));
     };
-
-    onDataChannelMessage = msg => {
-        console.log("Data channel message received", msg);
-    };
-
+    
     close = () => {
         const { username, targetUsername } = this;
 
